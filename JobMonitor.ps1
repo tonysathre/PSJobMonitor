@@ -7,7 +7,30 @@ The layout of the XAML form should be as follows:
 - A textbox to display the output of the selected job on the right side of the form
 - A button to refresh the list of jobs
 - A button to cancel the selected job
+- The JobOutput textbox should be read-only
+- The JobOutput textbox should be multiline
+- The JobOutput textbox should have a vertical scrollbar
+- The JobOutput textbox should have word wrap enabled
+- The JobOutput textbox should have a monospaced font
+- The JobOutput should refresh in real-time as the job progresses
 #>
+
+function Update-JobList {
+    # Refresh the list of jobs
+    $JobList.Items.Clear()
+    $JobOutput.Clear()
+    Get-Job | ForEach-Object {
+        $JobList.Items.Add($_.Name)
+    }
+}
+
+function Update-JobOutput {
+    # Display the output of the selected job
+    $SelectedJob = $JobList.SelectedItem
+    if ($SelectedJob) {
+        $JobOutput.Text = Get-Job -Name $SelectedJob | Receive-Job -Keep
+    }
+}
 
 # Load the XAML form
 [xml]$Xaml = Get-Content -Raw (Join-Path $PSScriptRoot JobMonitor.xaml)
@@ -30,7 +53,25 @@ $Xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | ForE
     Set-Variable -Name ($_.Name) -Value $Form.FindName($_.Name) -Scope Script
 }
 
+$Timer = New-Object System.Windows.Forms.Timer
+$Timer.Interval = 1000 # in milliseconds
+
 # Add event handlers
+$JobList.Add_SelectionChanged({
+    $SelectedJob = $JobList.SelectedItem
+    if ($SelectedJob) {
+        $Timer.Start()
+    }
+    else {
+        $Timer.Stop()
+    }
+})
+
+# Event handler for Timer Tick event
+$Timer.Add_Tick({
+    Update-JobOutput
+})
+
 $RefreshButton.Add_Click({
     # Refresh the list of jobs
     $JobList.Items.Clear()
@@ -60,6 +101,11 @@ $JobList.Add_SelectionChanged({
             $JobOutput.Text = $Job.Output
         }
     }
+})
+
+$Form.Add_Loaded({
+    # Refresh the list of jobs when the form is loaded
+    Update-JobList
 })
 
 # Show the form
