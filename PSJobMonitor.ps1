@@ -14,31 +14,32 @@ The layout of the XAML form should be as follows:
 - The JobOutput textbox should have a monospaced font
 - The JobOutput should refresh in real-time as the job progresses
 #>
-
+using namespace System.Windows
 function Update-JobList {
     # Refresh the list of jobs
-    $JobList.Items.Clear()
-    $JobOutput.Clear()
+    $ListBox_JobList.Items.Clear()
+    $TextBox_JobOutput.Clear()
     Get-Job | ForEach-Object {
-        $JobList.Items.Add($_.Name)
+        $ListBox_JobList.Items.Add($_.Name)
     }
 }
 
 function Update-JobOutput {
     # Display the output of the selected job
-    $SelectedJob = $JobList.SelectedItem
+    $SelectedJob = $ListBox_JobList.SelectedItem
     if ($SelectedJob) {
-        $JobOutput.Text = Get-Job -Name $SelectedJob | Receive-Job -Keep
+        $TextBox_JobOutput.Text = Get-Job -Name $SelectedJob | Receive-Job -Keep
     }
 }
 
 # Load the XAML form
-[xml]$Xaml = Get-Content -Raw (Join-Path $PSScriptRoot JobMonitor.xaml)
+[xml]$Xaml = Get-Content -Raw (Join-Path $PSScriptRoot PSJobMonitor.xaml)
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
+
 [System.Windows.Forms.Application]::EnableVisualStyles() | Out-Null
 
 try {
@@ -53,12 +54,16 @@ $Xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | ForE
     Set-Variable -Name ($_.Name) -Value $Form.FindName($_.Name) -Scope Script
 }
 
+#$Window_Main.Background = [System.Windows.Media.Brushes]::Gray
+
+$Button_Cancel.Visibility = [Visibility]::Hidden # not working
+
 $Timer = New-Object System.Windows.Forms.Timer
 $Timer.Interval = 1000 # in milliseconds
 
 # Add event handlers
-$JobList.Add_SelectionChanged({
-    $SelectedJob = $JobList.SelectedItem
+$ListBox_JobList.Add_SelectionChanged({
+    $SelectedJob = $ListBox_JobList.SelectedItem
     if ($SelectedJob) {
         $Timer.Start()
     }
@@ -72,33 +77,33 @@ $Timer.Add_Tick({
     Update-JobOutput
 })
 
-$RefreshButton.Add_Click({
+$Button_Refresh.Add_Click({
     # Refresh the list of jobs
-    $JobList.Items.Clear()
-    $JobOutput.Clear()
+    $ListBox_JobList.Items.Clear()
+    $TextBox_JobOutput.Clear()
     Get-Job | ForEach-Object {
-        $JobList.Items.Add($_.Name)
+        $ListBox_JobList.Items.Add($_.Name)
     }
 })
 
-$CancelButton.Add_Click({
+$Button_Cancel.Add_Click({
     # Cancel the selected job
-    $SelectedJob = $JobList.SelectedItem
+    $SelectedJob = $ListBox_JobList.SelectedItem
     if ($SelectedJob) {
         $Job = Get-Job -Name $SelectedJob
         if ($Job) {
-            $Job | Stop-Job
+            $Job | Stop-Job | Remove-Job -Force
         }
     }
 })
 
-$JobList.Add_SelectionChanged({
+$ListBox_JobList.Add_SelectionChanged({
     # Display the output of the selected job
-    $SelectedJob = $JobList.SelectedItem
+    $SelectedJob = $ListBox_JobList.SelectedItem
     if ($SelectedJob) {
         $Job = Get-Job -Name $SelectedJob
         if ($Job) {
-            $JobOutput.Text = $Job.Output
+            $TextBox_JobOutput.Text = $Job.Output
         }
     }
 })
