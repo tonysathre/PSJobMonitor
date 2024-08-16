@@ -2,7 +2,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Name="Window_Main"
-    Title="PS Job Monitor" Height="600" Width="800"
+    Title="PS Job Monitor" Height="900" Width="600"
     >
 
     <StackPanel >
@@ -19,10 +19,10 @@
             </Grid.RowDefinitions>
 
             <StackPanel>
+                <Button x:Name="Button_Refresh" Grid.Column="0" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Refresh Job List" />
+                <Button x:Name="Button_Cancel" Grid.Column="0" Margin="5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Content="Cancel Job" />
                 <GroupBox Name="GroupBox_JobList" Header="Job List">
                     <StackPanel>
-                        <Button x:Name="Button_Refresh" Grid.Column="0" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Refresh Job List" />
-                        <Button x:Name="Button_Cancel" Grid.Column="0" Margin="5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Content="Cancel Job" />
                         <ListBox Name="ListBox_JobList" Grid.Column="0" Margin="5" />
                     </StackPanel>
                 </GroupBox>
@@ -31,14 +31,37 @@
             <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="2" />
 
             <StackPanel Grid.Column="2">
-                <GroupBox Name="GroupBox_JobProperties" Header="Job Properties">
-                    <Label Name="Label_JobState" Content="State:" />
-                </GroupBox>
+                    <GroupBox Name="GroupBox_JobProperties" Header="Job Properties">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
 
-                <GroupBox Name="GroupBox_JobOutput" Grid.Column="2" Grid.Row="1" Margin="5" Header="Job Output" >
-                    <TextBox Name="TextBox_JobOutput" Height="800" Width="Auto" Margin="2" FontFamily="Consolas" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True"
+                                <Label Name="Label_JobName" Content="Name:" Grid.Column="0" Grid.Row="0" />
+                                <Label Name="Label_JobId" Content="ID:" Grid.Column="0" Grid.Row="1"/>
+                                <Label Name="Label_JobState" Content="State:" Grid.Column="0" Grid.Row="2"/>
+                                <!--<Label Name="Label_JobStatusMessage" Content="Status Message:" Grid.Column="1" Grid.Row="1" /> -->
+                                <Label Name="Label_JobStartTime" Content="Start Time:" Grid.Column="2" Grid.Row="0" />
+                                <Label Name="Label_JobEndTime" Content="End Time:" Grid.Column="2" Grid.Row="1" />
+                                <Label Name="Label_JobLocation" Content="Location:" Grid.Column="3" Grid.Row="2" />
+                            </Grid>
+                                <Label Name="Label_JobCommand" Content="Command:" Grid.Column="0" Grid.Row="4" />
+                                <TextBox Name="TextBox_JobCommand" Grid.Column="0" Grid.Row="4" TextWrapping="Wrap" FontFamily="Consolas" />
+                        </StackPanel>
+                    </GroupBox>
+                <GroupBox Name="GroupBox_JobOutput" Grid.Column="0" Grid.Row="1" Margin="5" Header="Job Output" >
+                    <TextBox Name="TextBox_JobOutput" Height="600" Width="Auto" Margin="2" FontFamily="Consolas" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True"
                         Text="{Binding Path=MessageText, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"
-                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
                         ScrollViewer.VerticalScrollBarVisibility="Visible"
                     />
                 </GroupBox>

@@ -15,8 +15,35 @@ The layout of the XAML form should be as follows:
 - The JobOutput should refresh in real-time as the job progresses
 #>
 using namespace System.Windows
+
+function Update-JobProperties {
+    $SelectedJob = $ListBox_JobList.SelectedItem
+    if ($SelectedJob) {
+        $Job = Get-Job -Name $SelectedJob
+        $Label_JobName.Content          = 'Name: {0}' -f $Job.Name
+        $Label_JobId.Content            = 'Id: {0}' -f $Job.Id
+        $Label_JobState.Content         = 'State: {0}' -f $Job.JobStateInfo.State
+        #$Label_JobStatusMessage.Content = 'Status Message: {0}' -f $Job.StatusMessage
+        $Label_JobStartTime.Content     = 'Start Time: {0}' -f $Job.PSBeginTime
+        $Label_JobEndTime.Content       = 'End Time: {0}' -f $Job.PSEndTime
+        $Label_JobLocation.Content      = 'Location: {0}' -f $Job.Location
+        $TextBox_JobCommand.Text        = $Job.Command
+    }
+}
+
 function Update-JobList {
     # Refresh the list of jobs
+    if ((Get-Job).Count -eq 0) {
+        $Timer.Stop()
+        $ListBox_JobList.Visibility = [Visibility]::Hidden
+
+        return
+    }
+
+    if ((Get-Job).Count -gt 0) {
+        $ListBox_JobList.Visibility = [Visibility]::Visible
+    }
+
     $ListBox_JobList.Items.Clear()
     $TextBox_JobOutput.Clear()
     Get-Job | ForEach-Object {
@@ -75,6 +102,7 @@ $ListBox_JobList.Add_SelectionChanged({
 # Event handler for Timer Tick event
 $Timer.Add_Tick({
     Update-JobOutput
+    Update-JobProperties
 })
 
 $Button_Refresh.Add_Click({
