@@ -1,19 +1,3 @@
-<#
-This script will be a GUI app using a XAML form to allow the user to see a list of background jobs started by Start-ThreadJob with build_all.ps1.
-The user can select one of the jobs and the jobs output will be displayed in a textbox.
-
-The layout of the XAML form should be as follows:
-- A listbox to display the list of jobs on the left side of the form
-- A textbox to display the output of the selected job on the right side of the form
-- A button to refresh the list of jobs
-- A button to cancel the selected job
-- The JobOutput textbox should be read-only
-- The JobOutput textbox should be multiline
-- The JobOutput textbox should have a vertical scrollbar
-- The JobOutput textbox should have word wrap enabled
-- The JobOutput textbox should have a monospaced font
-- The JobOutput should refresh in real-time as the job progresses
-#>
 using namespace System.Windows
 
 function Update-JobProperties {
@@ -59,7 +43,6 @@ function Update-JobOutput {
     }
 }
 
-# Load the XAML form
 [xml]$Xaml = Get-Content -Raw (Join-Path $PSScriptRoot PSJobMonitor.xaml)
 
 Add-Type -AssemblyName PresentationFramework
@@ -88,7 +71,7 @@ $Button_Cancel.Visibility = [Visibility]::Hidden # not working
 $Timer = New-Object System.Windows.Forms.Timer
 $Timer.Interval = 1000 # in milliseconds
 
-# Add event handlers
+# Event Handlers
 $ListBox_JobList.Add_SelectionChanged({
     $SelectedJob = $ListBox_JobList.SelectedItem
     if ($SelectedJob) {
@@ -99,14 +82,12 @@ $ListBox_JobList.Add_SelectionChanged({
     }
 })
 
-# Event handler for Timer Tick event
 $Timer.Add_Tick({
     Update-JobOutput
     Update-JobProperties
 })
 
 $Button_Refresh.Add_Click({
-    # Refresh the list of jobs
     $ListBox_JobList.Items.Clear()
     $TextBox_JobOutput.Clear()
     Get-Job | ForEach-Object {
@@ -115,7 +96,6 @@ $Button_Refresh.Add_Click({
 })
 
 $Button_Cancel.Add_Click({
-    # Cancel the selected job
     $SelectedJob = $ListBox_JobList.SelectedItem
     if ($SelectedJob) {
         $Job = Get-Job -Name $SelectedJob
@@ -126,7 +106,6 @@ $Button_Cancel.Add_Click({
 })
 
 $ListBox_JobList.Add_SelectionChanged({
-    # Display the output of the selected job
     $SelectedJob = $ListBox_JobList.SelectedItem
     if ($SelectedJob) {
         $Job = Get-Job -Name $SelectedJob
@@ -137,7 +116,6 @@ $ListBox_JobList.Add_SelectionChanged({
 })
 
 $Form.Add_Loaded({
-    # Refresh the list of jobs when the form is loaded
     Update-JobList
 })
 
