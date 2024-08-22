@@ -3,6 +3,9 @@ using namespace System.Windows
 function Update-JobProperties {
     $SelectedJob = $ListBox_JobList.SelectedItem
     if ($SelectedJob) {
+        if ($SelectedJob.State -ne 'Running') {
+            $Timer.Stop()
+        }
         $Job = Get-Job -Name $SelectedJob
         $Label_JobName.Content          = 'Name: {0}' -f $Job.Name
         $Label_JobId.Content            = 'Id: {0}' -f $Job.Id
@@ -27,32 +30,35 @@ function Update-ListBoxItem {
     )
     # get the index of the $Job in the listbox
     $Index = $ListBox_JobList.Items.IndexOf($Job.Name)
-    [MessageBox]::Show($Index)
-    # Colorize each item in the list based on the job state
-    switch ($Job.State) {
-        'Running' {
-            #$ListBox_JobList.Items[$Index] = $Job.Name
-            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Green
-        }
-        'Completed' {
-            #$ListBox_JobList.Items[$Index] = $Job.Name
-            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Black
-        }
-        'Failed' {
-            #$ListBox_JobList.Items[$Index] = $Job.Name
-            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Red
-        }
-        'Stopped' {
-            #$ListBox_JobList.Items[$Index] = $Job.Name
-            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Gray
-        }
-        'Suspended' {
-            #$ListBox_JobList.Items[$Index] = $Job.Name
-            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Yellow
-        }
-        default {
-            #$ListBox_JobList.Items[$Index] = $Job.Name
-            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Black
+
+    if ($Index -ge 0) {
+        # Force the ListBox to generate its items
+        $ListBox_JobList.UpdateLayout()
+        # Retrieve the ListBoxItem object
+        $ListBoxItem = $ListBox_JobList.ItemContainerGenerator.ContainerFromIndex($Index)
+
+        if ($null -ne $ListBoxItem) {
+            # Colorize each item in the list based on the job state
+            switch ($Job.State) {
+                'Running' {
+                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Black
+                }
+                'Completed' {
+                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Green
+                }
+                'Failed' {
+                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Red
+                }
+                'Stopped' {
+                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Gray
+                }
+                'Suspended' {
+                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Yellow
+                }
+                default {
+                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Black
+                }
+            }
         }
     }
 }
