@@ -55,7 +55,7 @@
                                 <Label Name="Label_JobLocation"  Content="Location:"   Grid.Column="3" Grid.Row="2" />
                             </Grid>
                                 <Label Name="Label_JobCommand" Content="Command:" Grid.Column="0" Grid.Row="4" />
-                                <TextBox Name="TextBox_JobCommand" Grid.Column="0" Grid.Row="4" TextWrapping="Wrap" FontFamily="Consolas" />
+                                <TextBox Name="TextBox_JobCommand" Grid.Column="0" Grid.Row="4" TextWrapping="Wrap" FontFamily="Consolas" IsReadOnly="True" />
                         </StackPanel>
                     </GroupBox>
                 <GroupBox Name="GroupBox_JobOutput" Grid.Column="0" Grid.Row="1" Margin="2" Header="Job Output" >
