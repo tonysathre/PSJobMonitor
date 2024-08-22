@@ -12,11 +12,52 @@ function Update-JobProperties {
         $Label_JobEndTime.Content       = 'End Time: {0}' -f $Job.PSEndTime
         $Label_JobLocation.Content      = 'Location: {0}' -f $Job.Location
         $TextBox_JobCommand.Text        = $Job.Command
+
+        if ($Job.State -eq 'Failed') {
+            $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Red
+        } else {
+            $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Black
+        }
+    }
+}
+
+function Update-ListBoxItem {
+    param (
+        [System.Management.Automation.Job]$Job
+    )
+    # get the index of the $Job in the listbox
+    $Index = $ListBox_JobList.Items.IndexOf($Job.Name)
+    [MessageBox]::Show($Index)
+    # Colorize each item in the list based on the job state
+    switch ($Job.State) {
+        'Running' {
+            #$ListBox_JobList.Items[$Index] = $Job.Name
+            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Green
+        }
+        'Completed' {
+            #$ListBox_JobList.Items[$Index] = $Job.Name
+            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Black
+        }
+        'Failed' {
+            #$ListBox_JobList.Items[$Index] = $Job.Name
+            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Red
+        }
+        'Stopped' {
+            #$ListBox_JobList.Items[$Index] = $Job.Name
+            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Gray
+        }
+        'Suspended' {
+            #$ListBox_JobList.Items[$Index] = $Job.Name
+            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Yellow
+        }
+        default {
+            #$ListBox_JobList.Items[$Index] = $Job.Name
+            $ListBox_JobList.Items[$Index] = [System.Windows.Media.Brushes]::Black
+        }
     }
 }
 
 function Update-JobList {
-    # Refresh the list of jobs
     if ((Get-Job).Count -eq 0) {
         $Timer.Stop()
         $ListBox_JobList.Visibility = [Visibility]::Hidden
@@ -32,14 +73,14 @@ function Update-JobList {
     $TextBox_JobOutput.Clear()
     Get-Job | ForEach-Object {
         $ListBox_JobList.Items.Add($_.Name)
+        Update-ListBoxItem -Job $_
     }
 }
 
 function Update-JobOutput {
-    # Display the output of the selected job
     $SelectedJob = $ListBox_JobList.SelectedItem
     if ($SelectedJob) {
-        $TextBox_JobOutput.Text = Get-Job -Name $SelectedJob | Receive-Job -Keep
+        $TextBox_JobOutput.Text = Get-Job -Name $SelectedJob | Receive-Job -Keep | Out-String
     }
 }
 
@@ -66,7 +107,7 @@ $Xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | ForE
 
 #$Window_Main.Background = [System.Windows.Media.Brushes]::Gray
 
-$Button_Cancel.Visibility = [Visibility]::Hidden # not working
+#$Button_Cancel.Visibility = [Visibility]::Hidden # not working
 
 $Timer = New-Object System.Windows.Forms.Timer
 $Timer.Interval = 1000 # in milliseconds
@@ -85,6 +126,7 @@ $ListBox_JobList.Add_SelectionChanged({
 $Timer.Add_Tick({
     Update-JobOutput
     Update-JobProperties
+    Update-ListBoxItem
 })
 
 $Button_Refresh.Add_Click({
