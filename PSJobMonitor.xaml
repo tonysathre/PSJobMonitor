@@ -19,8 +19,8 @@
             </Grid.RowDefinitions>
 
             <StackPanel>
-                <Button Name="Button_Refresh" Grid.Column="0" Margin="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Refresh Job List" />
-                <Button Name="Button_Cancel" Grid.Column="0" Margin="2" HorizontalAlignment="Right" VerticalAlignment="Bottom" Content="Cancel Job" />
+                <Button Name="Button_Refresh" Grid.Column="0" Grid.Row="0" Margin="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Refresh Job List" />
+                <Button Name="Button_Cancel" Grid.Column="0" Grid.Row="0" Margin="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Cancel Job" />
                 <GroupBox Name="GroupBox_JobList" Header="Job List">
                     <StackPanel>
                         <ListBox Name="ListBox_JobList" Grid.Column="0" Margin="2" />
