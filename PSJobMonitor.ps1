@@ -1,4 +1,5 @@
 using namespace System.Windows
+using namespace System.Management.Automation
 
 function Update-JobProperties {
     $SelectedJob = $ListBox_JobList.SelectedItem
@@ -26,7 +27,7 @@ function Update-JobProperties {
 
 function Update-ListBoxItem {
     param (
-        [System.Management.Automation.Job]$Job
+        [Job]$Job
     )
     # get the index of the $Job in the listbox
     $Index = $ListBox_JobList.Items.IndexOf($Job.Name)
