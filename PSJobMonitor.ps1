@@ -1,23 +1,29 @@
-using namespace System.Windows
 using namespace System.Management.Automation
+using namespace System.Windows
+using namespace System.Windows.Forms
+using namespace PresentationFramework
+using namespace PresentationCore
+using namespace System.Drawing
+
+Add-Type -AssemblyName PresentationFramework
+Add-Type -AssemblyName PresentationCore
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
 
 function Update-JobProperties {
-    $SelectedJob = $ListBox_JobList.SelectedItem
-    if ($SelectedJob) {
-        if ($SelectedJob.State -ne 'Running') {
-            $Timer.Stop()
-        }
-        $Job = Get-Job -Name $SelectedJob
-        $Label_JobName.Content          = 'Name: {0}' -f $Job.Name
-        $Label_JobId.Content            = 'Id: {0}' -f $Job.Id
-        $Label_JobState.Content         = 'State: {0}' -f $Job.JobStateInfo.State
-        #$Label_JobStatusMessage.Content = 'Status Message: {0}' -f $Job.StatusMessage
-        $Label_JobStartTime.Content     = 'Start Time: {0}' -f $Job.PSBeginTime
-        $Label_JobEndTime.Content       = 'End Time: {0}' -f $Job.PSEndTime
-        $Label_JobLocation.Content      = 'Location: {0}' -f $Job.Location
-        $TextBox_JobCommand.Text        = $Job.Command
+    if ($IsJobSelected) {
+        #if ($SelectedJobObject.State -ne 'Running') {
+        #    $Timer.Stop()
+        #}
+        $Label_JobName.Content      = 'Name: {0}'       -f $SelectedJobObject.Name
+        $Label_JobId.Content        = 'Id: {0}'         -f $SelectedJobObject.Id
+        $Label_JobState.Content     = 'State: {0}'      -f $SelectedJobObject.JobStateInfo.State
+        $Label_JobStartTime.Content = 'Start Time: {0}' -f $SelectedJobObject.PSBeginTime
+        $Label_JobEndTime.Content   = 'End Time: {0}'   -f $SelectedJobObject.PSEndTime
+        $Label_JobLocation.Content  = 'Location: {0}'   -f $SelectedJobObject.Location
+        $TextBox_JobCommand.Text    = $SelectedJobObject.Command
 
-        if ($Job.State -eq 'Failed') {
+        if ($SelectedJobObject.State -eq 'Failed') {
             $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Red
         } else {
             $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Black
@@ -26,38 +32,37 @@ function Update-JobProperties {
 }
 
 function Update-ListBoxItem {
-    param (
-        [Job]$Job
-    )
-    # get the index of the $Job in the listbox
-    $Index = $ListBox_JobList.Items.IndexOf($Job.Name)
+    $Jobs | ForEach-Object {
+        # get the index of the $Job in the listbox
+        $Index = $ListBox_JobList.Items.IndexOf($_.Name)
 
-    if ($Index -ge 0) {
-        # Force the ListBox to generate its items
-        $ListBox_JobList.UpdateLayout()
-        # Retrieve the ListBoxItem object
-        $ListBoxItem = $ListBox_JobList.ItemContainerGenerator.ContainerFromIndex($Index)
+        if ($Index -ge 0) {
+            # Force the ListBox to generate its items
+            $ListBox_JobList.UpdateLayout()
+            # Retrieve the ListBoxItem object
+            $ListBoxItem = $ListBox_JobList.ItemContainerGenerator.ContainerFromIndex($Index)
 
-        if ($null -ne $ListBoxItem) {
-            # Colorize each item in the list based on the job state
-            switch ($Job.State) {
-                'Running' {
-                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Black
-                }
-                'Completed' {
-                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Green
-                }
-                'Failed' {
-                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Red
-                }
-                'Stopped' {
-                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Gray
-                }
-                'Suspended' {
-                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Yellow
-                }
-                default {
-                    $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Black
+            if ($null -ne $ListBoxItem) {
+                # Colorize each item in the list based on the job state
+                switch ($_.State) {
+                    'Running' {
+                        $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Black
+                    }
+                    'Completed' {
+                        $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Green
+                    }
+                    'Failed' {
+                        $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Red
+                    }
+                    'Stopped' {
+                        $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Gray
+                    }
+                    'Suspended' {
+                        $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Yellow
+                    }
+                    default {
+                        $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Black
+                    }
                 }
             }
         }
@@ -65,38 +70,32 @@ function Update-ListBoxItem {
 }
 
 function Update-JobList {
-    if ((Get-Job).Count -eq 0) {
+    $script:Jobs = Get-Job
+    if ($Jobs.Count -eq 0) {
         $Timer.Stop()
         $ListBox_JobList.Visibility = [Visibility]::Hidden
 
         return
     }
 
-    if ((Get-Job).Count -gt 0) {
+    if ($Jobs.Count -gt 0) {
         $ListBox_JobList.Visibility = [Visibility]::Visible
     }
 
     $ListBox_JobList.Items.Clear()
     $TextBox_JobOutput.Clear()
-    Get-Job | ForEach-Object {
+    $Jobs | ForEach-Object {
         $ListBox_JobList.Items.Add($_.Name)
-        Update-ListBoxItem -Job $_
     }
 }
 
 function Update-JobOutput {
-    $SelectedJob = $ListBox_JobList.SelectedItem
-    if ($SelectedJob) {
-        $TextBox_JobOutput.Text = Get-Job -Name $SelectedJob | Receive-Job -Keep | Out-String
+    if ($IsJobSelected) {
+        $TextBox_JobOutput.Text = $SelectedJobObject | Receive-Job -Keep | Out-String -Stream
     }
 }
 
 [xml]$Xaml = Get-Content -Raw (Join-Path $PSScriptRoot PSJobMonitor.xaml)
-
-Add-Type -AssemblyName PresentationFramework
-Add-Type -AssemblyName PresentationCore
-Add-Type -AssemblyName System.Drawing
-Add-Type -AssemblyName System.Windows.Forms
 
 [System.Windows.Forms.Application]::EnableVisualStyles() | Out-Null
 
@@ -113,44 +112,45 @@ $Xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | ForE
 }
 
 #$Window_Main.Background = [System.Windows.Media.Brushes]::Gray
-
-#$Button_Cancel.Visibility = [Visibility]::Hidden # not working
-
+$Button_Cancel.IsEnabled = $false # disable the cancel button until a job is selected
 $Timer = New-Object System.Windows.Forms.Timer
 $Timer.Interval = 1000 # in milliseconds
 
 # Event Handlers
 $ListBox_JobList.Add_SelectionChanged({
-    $SelectedJob = $ListBox_JobList.SelectedItem
-    if ($SelectedJob) {
+    $script:SelectedJobName = $ListBox_JobList.SelectedItem
+
+    if ($SelectedJobName) {
         $Timer.Start()
-    }
-    else {
+    } else {
         $Timer.Stop()
     }
 })
 
 $Timer.Add_Tick({
-    Update-JobOutput
-    Update-JobProperties
+    $script:IsJobSelected = $ListBox_JobList.SelectedItem -ne $null
+    $Button_Cancel.IsEnabled = $IsJobSelected
+
+    if ($IsJobSelected) {
+        $script:SelectedJobObject = Get-Job -Name $SelectedJobName
+        Update-JobProperties
+        Update-JobOutput
+    }
+
     Update-ListBoxItem
 })
 
-$Button_Refresh.Add_Click({
-    $ListBox_JobList.Items.Clear()
-    $TextBox_JobOutput.Clear()
-    Get-Job | ForEach-Object {
-        $ListBox_JobList.Items.Add($_.Name)
-    }
-})
+# $Button_Refresh.Add_Click({
+#     $ListBox_JobList.Items.Clear()
+#     $TextBox_JobOutput.Clear()
+#     Get-Job | ForEach-Object {
+#         $ListBox_JobList.Items.Add($_.Name)
+#     }
+# })
 
 $Button_Cancel.Add_Click({
-    $SelectedJob = $ListBox_JobList.SelectedItem
-    if ($SelectedJob) {
-        $Job = Get-Job -Name $SelectedJob
-        if ($Job) {
-            $Job | Stop-Job | Remove-Job -Force
-        }
+    if ($IsJobSelected) {
+        $SelectedJobObject.Name | Stop-Job -PassThru | Remove-Job -Force
     }
 })
 

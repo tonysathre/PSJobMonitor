@@ -19,7 +19,7 @@
             </Grid.RowDefinitions>
 
             <StackPanel>
-                <Button Name="Button_Refresh" Grid.Column="0" Grid.Row="0" Margin="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Refresh Job List" />
+                <!-- <Button Name="Button_Refresh" Grid.Column="0" Grid.Row="0" Margin="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Refresh Job List" /> -->
                 <Button Name="Button_Cancel" Grid.Column="0" Grid.Row="0" Margin="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Cancel Job" />
                 <GroupBox Name="GroupBox_JobList" Header="Job List">
                     <StackPanel>
@@ -46,10 +46,9 @@
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
 
-                                <Label Name="Label_JobName"  Content="Name:"  Grid.Column="0" Grid.Row="0" />
-                                <Label Name="Label_JobId"    Content="ID:"    Grid.Column="0" Grid.Row="1"/>
-                                <Label Name="Label_JobState" Content="State:" Grid.Column="0" Grid.Row="2"/>
-                                <!--<Label Name="Label_JobStatusMessage" Content="Status Message:" Grid.Column="1" Grid.Row="1" /> -->
+                                <Label Name="Label_JobName"      Content="Name:"       Grid.Column="0" Grid.Row="0" />
+                                <Label Name="Label_JobId"        Content="ID:"         Grid.Column="0" Grid.Row="1"/>
+                                <Label Name="Label_JobState"     Content="State:"      Grid.Column="0" Grid.Row="2"/>
                                 <Label Name="Label_JobStartTime" Content="Start Time:" Grid.Column="2" Grid.Row="0" />
                                 <Label Name="Label_JobEndTime"   Content="End Time:"   Grid.Column="2" Grid.Row="1" />
                                 <Label Name="Label_JobLocation"  Content="Location:"   Grid.Column="3" Grid.Row="2" />
@@ -59,10 +58,9 @@
                         </StackPanel>
                     </GroupBox>
                 <GroupBox Name="GroupBox_JobOutput" Grid.Column="0" Grid.Row="1" Margin="2" Header="Job Output" >
-                    <TextBox Name="TextBox_JobOutput" Height="600" Width="Auto" Margin="2" FontFamily="Consolas" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True"
-                        Text="{Binding Path=MessageText, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"
-                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                        ScrollViewer.VerticalScrollBarVisibility="Visible"
+                    <TextBox Name="TextBox_JobOutput" Height="600" Width="Auto" Margin="2" FontFamily="Consolas" TextWrapping="Wrap" IsReadOnly="True"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
                     />
                 </GroupBox>
             </StackPanel>
