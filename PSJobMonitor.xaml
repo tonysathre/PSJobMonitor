@@ -5,7 +5,24 @@
     Title="PS Job Monitor" Height="900" Width="600"
     >
 
-    <StackPanel >
+    <StackPanel>
+
+        <Menu IsMainMenu="True" DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="Exit" Name="MenuItem_Exit" />
+            </MenuItem>
+            <MenuItem Header="_Job">
+                <MenuItem Header="Stop Job"    Name="MenuItem_StopJob" />
+                <MenuItem Header="Restart Job" Name="MenuItem_RestartJob" />
+                <Separator />
+                <MenuItem Header="Remove Job" Name="MenuItem_RemoveJob" />
+            </MenuItem>
+            <MenuItem Header="_Logs">
+                <MenuItem Header="Save Log"      Name="MenuItem_SaveLog" />
+                <MenuItem Header="Save All Logs" Name="MenuItem_SaveAllLogs" />
+            </MenuItem>
+        </Menu>
+
         <Grid Name="Grid" Margin="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -19,8 +36,6 @@
             </Grid.RowDefinitions>
 
             <StackPanel>
-                <!-- <Button Name="Button_Refresh" Grid.Column="0" Grid.Row="0" Margin="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Refresh Job List" /> -->
-                <Button Name="Button_Cancel" Grid.Column="0" Grid.Row="0" Margin="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Content="Cancel Job" />
                 <GroupBox Name="GroupBox_JobList" Header="Job List">
                     <StackPanel>
                         <ListBox Name="ListBox_JobList" Grid.Column="0" Margin="2" />
@@ -61,6 +76,7 @@
                     <TextBox Name="TextBox_JobOutput" Height="600" Width="Auto" Margin="2" FontFamily="Consolas" TextWrapping="Wrap" IsReadOnly="True"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.CanContentScroll="True"
                     />
                 </GroupBox>
             </StackPanel>

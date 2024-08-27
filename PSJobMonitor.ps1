@@ -10,6 +10,21 @@ Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
 
+
+function Restart-Job {
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [Job]$Job
+    )
+
+    if ($IsJobSelected) {
+        $Job | Stop-Job
+        Start-ThreadJob -Name "$($SelectedJobObject.Name) - Restart" -ScriptBlock ([ScriptBlock]::Create($SelectedJobObject.Command))
+        $TextBox_JobOutput.Clear()
+        Update-JobList
+    }
+}
 function Update-JobProperties {
     if ($IsJobSelected) {
         #if ($SelectedJobObject.State -ne 'Running') {
@@ -120,16 +135,11 @@ $Timer.Interval = 1000 # in milliseconds
 $ListBox_JobList.Add_SelectionChanged({
     $script:SelectedJobName = $ListBox_JobList.SelectedItem
 
-    if ($SelectedJobName) {
-        $Timer.Start()
-    } else {
-        $Timer.Stop()
-    }
+    $Timer.Start()
 })
 
 $Timer.Add_Tick({
     $script:IsJobSelected = $ListBox_JobList.SelectedItem -ne $null
-    $Button_Cancel.IsEnabled = $IsJobSelected
 
     if ($IsJobSelected) {
         $script:SelectedJobObject = Get-Job -Name $SelectedJobName
@@ -140,17 +150,50 @@ $Timer.Add_Tick({
     Update-ListBoxItem
 })
 
-# $Button_Refresh.Add_Click({
-#     $ListBox_JobList.Items.Clear()
-#     $TextBox_JobOutput.Clear()
-#     Get-Job | ForEach-Object {
-#         $ListBox_JobList.Items.Add($_.Name)
-#     }
-# })
+$MenuItem_Exit.Add_Click({
+    $Form.Close()
+})
 
-$Button_Cancel.Add_Click({
+$MenuItem_RestartJob.Add_Click({
+    Restart-Job -Job $SelectedJobObject
+})
+
+$MenuItem_StopJob.Add_Click({
+    if ($IsJobSelected -and $SelectedJobObject.State -eq 'Running') {
+        $SelectedJobObject.StopJob()
+        Update-JobList
+    }
+})
+
+$MenuItem_RemoveJob.Add_Click({
     if ($IsJobSelected) {
-        $SelectedJobObject.Name | Stop-Job -PassThru | Remove-Job -Force
+        $SelectedJobObject | Remove-Job -Force
+        Update-JobList
+    }
+})
+
+$MenuItem_SaveAllLogs.Add_Click({
+    $FolderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
+    $FolderBrowserDialog.Description = 'Select a folder to save the job logs'
+    $FolderBrowserDialog.ShowDialog() | Out-Null
+
+    if ($FolderBrowserDialog.SelectedPath) {
+        $Jobs | ForEach-Object {
+            $JobName = $_.Name
+            $LogFilePath = Join-Path $FolderBrowserDialog.SelectedPath "$JobName.log"
+            $_ | Receive-Job -Keep | Out-File -FilePath $LogFilePath
+        }
+    }
+})
+
+$MenuItem_SaveLog.Add_Click({
+    $SaveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
+    $SaveFileDialog.Filter = 'Text files (*.txt)|*.txt|All files (*.*)|*.*'
+    $SaveFileDialog.Title = 'Save Job Output'
+    $SaveFileDialog.ShowDialog() | Out-Null
+
+    if ($SaveFileDialog.FileName) {
+        $TextBox_JobOutput.Text | Out-File -FilePath $SaveFileDialog.FileName
     }
 })
 
@@ -166,10 +209,9 @@ $ListBox_JobList.Add_SelectionChanged({
 
 $Form.Add_Loaded({
     Update-JobList
+    $Timer.Start()
 })
 
-# Show the form
 $Form.ShowDialog() | Out-Null
 
-# Cleanup
 $Form.Close()
