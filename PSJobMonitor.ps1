@@ -99,10 +99,25 @@ function Update-JobProperties {
         $Label_JobLocation.Content  = 'Location: {0}'   -f $SelectedJobObject.Location
         $TextBox_JobCommand.Text    = $SelectedJobObject.Command
 
-        if ($SelectedJobObject.State -eq 'Failed') {
-            $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Red
-        } else {
-            $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Black
+        switch ($SelectedJobObject.State) {
+            'Running' {
+                $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Black
+            }
+            'Completed' {
+                $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Green
+            }
+            'Failed' {
+                $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Red
+            }
+            'Stopped' {
+                $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Gray
+            }
+            'NotStarted' {
+                $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Blue
+            }
+            default {
+                $Label_JobState.Foreground = [System.Windows.Media.Brushes]::Black
+            }
         }
     }
 }
@@ -129,8 +144,8 @@ function Update-ListBoxItem {
                     'Stopped' {
                         $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Gray
                     }
-                    'Suspended' {
-                        $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Yellow
+                    'NotStarted' {
+                        $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Blue
                     }
                     default {
                         $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Black
