@@ -178,7 +178,7 @@ function Update-JobList {
 
 function Update-JobOutput {
     if ($IsJobSelected) {
-        $TextBox_JobOutput.Text = $SelectedJobObject | Receive-Job -Keep | Out-String -Stream # Do we need -Stream?
+        $TextBox_JobOutput.Text = $SelectedJobObject.Output | Out-String
     }
 }
 
