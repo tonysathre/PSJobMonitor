@@ -38,7 +38,7 @@
             <StackPanel>
                 <GroupBox Name="GroupBox_JobList" Header="Job List">
                     <StackPanel>
-                        <ListBox Name="ListBox_JobList" Grid.Column="0" Margin="2" >
+                        <ListBox Name="ListBox_JobList" Grid.Column="0" Margin="2" SelectionMode="Single">
                             <ListBox.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Name="ContextMenu_MenuItem_StopJob" Header="Stop Job" />
