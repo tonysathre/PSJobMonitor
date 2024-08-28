@@ -1,3 +1,4 @@
+
 using namespace System.Management.Automation
 using namespace System.Windows
 using namespace System.Windows.Forms
@@ -5,26 +6,86 @@ using namespace PresentationFramework
 using namespace PresentationCore
 using namespace System.Drawing
 
+[CmdletBinding()]
+param ()
+
+if ($PSBoundParameters['Debug']) {
+    $XamlWatcherLib  = (Join-Path (Split-Path -Parent (Get-package XamlWatcher.WPF).Source) -ChildPath 'lib\net45\XamlWatcher.WPF.dll')
+    [System.Reflection.Assembly]::LoadFrom($XamlWatcherLib)
+    $XamlWatcher = New-Object XamlWatcher.WPF.Watcher($PSScriptRoot)
+    $DebugPreference = 'Continue'
+}
+
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
 
+function Export-AllJobLogs {
+    $FolderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
+    $FolderBrowserDialog.Description = 'Select a folder to save the job logs'
+    $FolderBrowserDialog.ShowDialog() | Out-Null
+
+    if ($FolderBrowserDialog.SelectedPath) {
+        $Jobs | ForEach-Object {
+            $JobName = $_.Name
+            $LogFilePath = Join-Path $FolderBrowserDialog.SelectedPath "$JobName.log"
+            $_ | Receive-Job -Keep | Out-File -FilePath $LogFilePath
+        }
+    }
+}
+
+function Export-JobLog {
+    $SaveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
+    $SaveFileDialog.Filter = 'Text files (*.txt)|*.txt|All files (*.*)|*.*'
+    $SaveFileDialog.Title = 'Save Job Output'
+    $SaveFileDialog.FileName = $SelectedJobObject.Name
+    $SaveFileDialog.ShowDialog() | Out-Null
+
+    if ($SaveFileDialog.FileName) {
+        $TextBox_JobOutput.Text | Out-File -FilePath $SaveFileDialog.FileName
+    }
+}
+function Remove-ThisJob {
+    param (
+        [Parameter(Mandatory)]
+        [Job]$Job
+    )
+
+    $Job | Remove-Job -Force
+    Update-JobList
+}
+
+function Stop-ThisJob {
+    param (
+        [Parameter(Mandatory)]
+        [Job]$Job
+    )
+
+    if ($IsJobSelected -and $Job.State -eq 'Running') {
+        $Job.StopJob()
+        Update-JobList
+    }
+}
 
 function Restart-Job {
     param (
         [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
         [Job]$Job
     )
 
-    if ($IsJobSelected) {
-        $Job | Stop-Job
-        Start-ThreadJob -Name "$($SelectedJobObject.Name) - Restart" -ScriptBlock ([ScriptBlock]::Create($SelectedJobObject.Command))
-        $TextBox_JobOutput.Clear()
-        Update-JobList
+    if (-not $Job.PSObject.Properties['RestartCount']) {
+        $Job | Add-Member -MemberType NoteProperty -Name RestartCount -Value 0
     }
+
+    $Job.RestartCount++
+
+    $Job | Stop-Job
+    Start-ThreadJob -Name ("{0} - Retry #{1}" -f $Job.Name, $Job.RestartCount) -ScriptBlock ([ScriptBlock]::Create($Job.Command))
+    $TextBox_JobOutput.Clear()
+    Update-JobList
 }
+
 function Update-JobProperties {
     if ($IsJobSelected) {
         #if ($SelectedJobObject.State -ne 'Running') {
@@ -48,17 +109,13 @@ function Update-JobProperties {
 
 function Update-ListBoxItem {
     $Jobs | ForEach-Object {
-        # get the index of the $Job in the listbox
         $Index = $ListBox_JobList.Items.IndexOf($_.Name)
 
         if ($Index -ge 0) {
-            # Force the ListBox to generate its items
             $ListBox_JobList.UpdateLayout()
-            # Retrieve the ListBoxItem object
             $ListBoxItem = $ListBox_JobList.ItemContainerGenerator.ContainerFromIndex($Index)
 
             if ($null -ne $ListBoxItem) {
-                # Colorize each item in the list based on the job state
                 switch ($_.State) {
                     'Running' {
                         $ListBoxItem.Foreground = [System.Windows.Media.Brushes]::Black
@@ -86,8 +143,8 @@ function Update-ListBoxItem {
 
 function Update-JobList {
     $script:Jobs = Get-Job
+
     if ($Jobs.Count -eq 0) {
-        $Timer.Stop()
         $ListBox_JobList.Visibility = [Visibility]::Hidden
 
         return
@@ -106,7 +163,7 @@ function Update-JobList {
 
 function Update-JobOutput {
     if ($IsJobSelected) {
-        $TextBox_JobOutput.Text = $SelectedJobObject | Receive-Job -Keep | Out-String -Stream
+        $TextBox_JobOutput.Text = $SelectedJobObject | Receive-Job -Keep | Out-String -Stream # Do we need -Stream?
     }
 }
 
@@ -126,8 +183,6 @@ $Xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]") | ForE
     Set-Variable -Name ($_.Name) -Value $Form.FindName($_.Name) -Scope Script
 }
 
-#$Window_Main.Background = [System.Windows.Media.Brushes]::Gray
-$Button_Cancel.IsEnabled = $false # disable the cancel button until a job is selected
 $Timer = New-Object System.Windows.Forms.Timer
 $Timer.Interval = 1000 # in milliseconds
 
@@ -135,7 +190,7 @@ $Timer.Interval = 1000 # in milliseconds
 $ListBox_JobList.Add_SelectionChanged({
     $script:SelectedJobName = $ListBox_JobList.SelectedItem
 
-    $Timer.Start()
+    #$Timer.Start()
 })
 
 $Timer.Add_Tick({
@@ -159,42 +214,19 @@ $MenuItem_RestartJob.Add_Click({
 })
 
 $MenuItem_StopJob.Add_Click({
-    if ($IsJobSelected -and $SelectedJobObject.State -eq 'Running') {
-        $SelectedJobObject.StopJob()
-        Update-JobList
-    }
+    Stop-ThisJob -Job $SelectedJobObject
 })
 
 $MenuItem_RemoveJob.Add_Click({
-    if ($IsJobSelected) {
-        $SelectedJobObject | Remove-Job -Force
-        Update-JobList
-    }
+    Remove-Job -Job $SelectedJobObject
 })
 
 $MenuItem_SaveAllLogs.Add_Click({
-    $FolderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
-    $FolderBrowserDialog.Description = 'Select a folder to save the job logs'
-    $FolderBrowserDialog.ShowDialog() | Out-Null
-
-    if ($FolderBrowserDialog.SelectedPath) {
-        $Jobs | ForEach-Object {
-            $JobName = $_.Name
-            $LogFilePath = Join-Path $FolderBrowserDialog.SelectedPath "$JobName.log"
-            $_ | Receive-Job -Keep | Out-File -FilePath $LogFilePath
-        }
-    }
+    Export-AllJobLogs
 })
 
 $MenuItem_SaveLog.Add_Click({
-    $SaveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
-    $SaveFileDialog.Filter = 'Text files (*.txt)|*.txt|All files (*.*)|*.*'
-    $SaveFileDialog.Title = 'Save Job Output'
-    $SaveFileDialog.ShowDialog() | Out-Null
-
-    if ($SaveFileDialog.FileName) {
-        $TextBox_JobOutput.Text | Out-File -FilePath $SaveFileDialog.FileName
-    }
+    Export-JobLog
 })
 
 $ListBox_JobList.Add_SelectionChanged({
@@ -207,9 +239,36 @@ $ListBox_JobList.Add_SelectionChanged({
     }
 })
 
+$ContextMenu_MenuItem_RestartJob.Add_Click({
+    Restart-Job -Job $SelectedJobObject
+})
+
+$ContextMenu_MenuItem_StopJob.Add_Click({
+    Stop-ThisJob -Job $SelectedJobObject
+})
+
+$ContextMenu_MenuItem_RemoveJob.Add_Click({
+    if ($IsJobSelected) {
+        $SelectedJobObject | Remove-Job -Force
+        Update-JobList
+    }
+})
+
+$ContextMenu_MenuItem_SaveLog.Add_Click({
+    Export-JobLog
+})
+
+$ContextMenu_MenuItem_SaveAllLogs.Add_Click({
+    Export-AllJobLogs
+})
+
 $Form.Add_Loaded({
     Update-JobList
     $Timer.Start()
+
+    if ($PSBoundParameters['Debug']) {
+        $XamlWatcher.Watch()
+    }
 })
 
 $Form.ShowDialog() | Out-Null

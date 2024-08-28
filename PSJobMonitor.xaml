@@ -38,7 +38,18 @@
             <StackPanel>
                 <GroupBox Name="GroupBox_JobList" Header="Job List">
                     <StackPanel>
-                        <ListBox Name="ListBox_JobList" Grid.Column="0" Margin="2" />
+                        <ListBox Name="ListBox_JobList" Grid.Column="0" Margin="2" >
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Name="ContextMenu_MenuItem_StopJob" Header="Stop Job" />
+                                    <MenuItem Name="ContextMenu_MenuItem_RestartJob" Header="Restart Job" />
+                                    <MenuItem Name="ContextMenu_MenuItem_RemoveJob" Header="Remove Job" />
+                                    <Separator />
+                                    <MenuItem Name="ContextMenu_MenuItem_SaveLog" Header="Save Log" />
+                                    <MenuItem Name="ContextMenu_MenuItem_SaveAllLogs" Header="Save All Logs" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
