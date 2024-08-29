@@ -2,27 +2,10 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Name="Window_Main"
-    Title="PS Job Monitor" Height="900" Width="600"
+    Title="PS Job Monitor" Height="1050" Width="750"
     >
 
     <StackPanel>
-
-        <Menu IsMainMenu="True" DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="Exit" Name="MenuItem_Exit" />
-            </MenuItem>
-            <MenuItem Header="_Job">
-                <MenuItem Header="Stop Job"    Name="MenuItem_StopJob" />
-                <MenuItem Header="Restart Job" Name="MenuItem_RestartJob" />
-                <Separator />
-                <MenuItem Header="Remove Job" Name="MenuItem_RemoveJob" />
-            </MenuItem>
-            <MenuItem Header="_Logs">
-                <MenuItem Header="Save Log"      Name="MenuItem_SaveLog" />
-                <MenuItem Header="Save All Logs" Name="MenuItem_SaveAllLogs" />
-            </MenuItem>
-        </Menu>
-
         <Grid Name="Grid" Margin="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -38,7 +21,7 @@
             <StackPanel>
                 <GroupBox Name="GroupBox_JobList" Header="Job List">
                     <StackPanel>
-                        <ListBox Name="ListBox_JobList" Grid.Column="0" Margin="2" SelectionMode="Single">
+                        <ListBox Name="ListBox_JobList" Grid.Column="0" Margin="2" SelectionMode="Extended" >
                             <ListBox.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Name="ContextMenu_MenuItem_StopJob" Header="Stop Job" />
@@ -46,7 +29,6 @@
                                     <MenuItem Name="ContextMenu_MenuItem_RemoveJob" Header="Remove Job" />
                                     <Separator />
                                     <MenuItem Name="ContextMenu_MenuItem_SaveLog" Header="Save Log" />
-                                    <MenuItem Name="ContextMenu_MenuItem_SaveAllLogs" Header="Save All Logs" />
                                 </ContextMenu>
                             </ListBox.ContextMenu>
                         </ListBox>
@@ -83,8 +65,15 @@
                                 <TextBox Name="TextBox_JobCommand" Grid.Column="0" Grid.Row="4" TextWrapping="Wrap" FontFamily="Consolas" IsReadOnly="True" />
                         </StackPanel>
                     </GroupBox>
-                <GroupBox Name="GroupBox_JobOutput" Grid.Column="0" Grid.Row="1" Margin="2" Header="Job Output" >
-                    <TextBox Name="TextBox_JobOutput" Height="600" Width="Auto" Margin="2" FontFamily="Consolas" TextWrapping="Wrap" IsReadOnly="True"
+                <GroupBox Name="GroupBox_JobOutput" Grid.Column="0" Grid.Row="1" Margin="2" Header="Job Output">
+                    <TextBox Name="TextBox_JobOutput" Height="600" MaxHeight="800" Width="Auto" Margin="2" FontFamily="Consolas" TextWrapping="Wrap" IsReadOnly="True"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.CanContentScroll="True"
+                    />
+                </GroupBox>
+                <GroupBox Name="GroupBox_JobErrors" Grid.Column="0" Grid.Row="1" Margin="2" Header="Job Errors">
+                    <TextBox Name="TextBox_JobErrors" Height="150" MaxHeight="800" Width="Auto" Margin="2" FontFamily="Consolas" TextWrapping="Wrap" IsReadOnly="True"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                              ScrollViewer.CanContentScroll="True"
