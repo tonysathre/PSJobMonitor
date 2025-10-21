@@ -194,39 +194,88 @@ function Show-PSJobMonitor {
         }
     }
 
-    function Update-JobOutput {
-        if ($IsJobSelected) {
-            $TextBox_JobOutput.Text = $SelectedJobObject[-1].Output | Out-String
-            $TextBox_JobErrors.Text = $SelectedJobObject[-1].Error | Out-String
-        }
-    }
-
     function Register-JobEvents {
         $script:JobEventSubscriptions = @()
         $Jobs = Get-Job | Where-Object PSJobTypeName -ne $null
-        foreach ($Job in $Jobs) {
-            $subscription = Register-ObjectEvent -InputObject $Job -EventName StateChanged -Action {
-                if ($script:SelectedJobName -eq $Job.Name) {
-                    $script:SelectedJobObject = $Job
-                    Update-JobOutput
-                    Update-JobProperties
-                    Update-ListBoxItem
+
+        foreach ($CurrentJob in $Jobs) {
+            # Store job name in a variable to use in the script block
+            $JobName = $CurrentJob.Name
+
+            $ActionParams = @{
+                InputObject = $CurrentJob
+                EventName   = 'StateChanged'
+                Action      = {
+                    # Must use script scope to access variables from parent scope
+                    $script:Form.Dispatcher.Invoke([Action] {
+                        Write-Verbose "Job state changed: $JobName"
+
+                        # Update the selected job if it's the one that changed
+                        if ($script:SelectedJobName -eq $JobName) {
+                            # Refresh the job object to get latest data
+                            $script:SelectedJobObject = Get-Job -Name $script:SelectedJobName
+                            Update-JobOutput
+                            Update-JobProperties
+                            Update-ListBoxItem
+                        }
+                    })
                 }
             }
-            $script:JobEventSubscriptions += $subscription
-            Write-Verbose "Registered event for job: $($Job.Name)"
+
+            $Subscription = Register-ObjectEvent @ActionParams
+            $script:JobEventSubscriptions += $Subscription
+            Write-Verbose "Registered event for job: $JobName"
         }
 
+        # Add a timer to periodically refresh the selected job's output
+        $script:RefreshTimer = New-Object System.Windows.Threading.DispatcherTimer
+        $script:RefreshTimer.Interval = [TimeSpan]::FromSeconds(2)
+        $script:RefreshTimer.Add_Tick({
+            if ($script:IsJobSelected) {
+                # Refresh the job object to get latest data
+                $script:SelectedJobObject = Get-Job -Name $script:SelectedJobName
+                Update-JobOutput
+            }
+        })
+        $script:RefreshTimer.Start()
     }
 
     function Unregister-JobEvents {
         if ($script:JobEventSubscriptions) {
-            foreach ($subscription in $script:JobEventSubscriptions) {
-                Remove-Job -Id $subscription.Id -Force
+            foreach ($Subscription in $script:JobEventSubscriptions) {
+                Unregister-Event -SubscriptionId $Subscription.Id -Force -ErrorAction SilentlyContinue
+                Remove-Job -Id $Subscription.Id -Force -ErrorAction SilentlyContinue
             }
             $script:JobEventSubscriptions = @()
         }
-        Update-ListBoxItem
+
+        if ($script:RefreshTimer) {
+            $script:RefreshTimer.Stop()
+            $script:RefreshTimer = $null
+        }
+    }
+
+    function Update-JobOutput {
+        if ($script:IsJobSelected -and $script:SelectedJobObject) {
+            try {
+                # Force receive the job output to get the latest data
+                $JobOutput = Receive-Job -Job $script:SelectedJobObject -Keep | Out-String
+                $JobError  = $script:SelectedJobObject.Error | Out-String
+
+                # Only update if we have new content
+                if ($JobOutput -ne $TextBox_JobOutput.Text) {
+                    $TextBox_JobOutput.Text = $JobOutput
+                    Write-Verbose "Updated job output for: $($script:SelectedJobObject.Name)"
+                }
+
+                if ($JobError -ne $TextBox_JobErrors.Text) {
+                    $TextBox_JobErrors.Text = $JobError
+                }
+            }
+            catch {
+                Write-Warning "Failed to update job output: $_"
+            }
+        }
     }
 
     [xml]$Xaml = Get-Content -Raw (Join-Path $PSScriptRoot PSJobMonitor.xaml)
@@ -247,14 +296,11 @@ function Show-PSJobMonitor {
 
     #Event Handlers
     $ListBox_JobList.Add_SelectionChanged({
-        $SelectedJob = $ListBox_JobList.SelectedItem
-        if ($SelectedJob) {
-            $Job = Get-Job -Name $SelectedJob
-            if ($Job) {
-                $TextBox_JobOutput.Text = $Job.Output
-            }
-        }
-        $IsJobSelected = $true
+        $script:SelectedJobName = $ListBox_JobList.SelectedItem
+        $script:SelectedJobObject = Get-Job -Name $script:SelectedJobName
+        $script:IsJobSelected = $true
+        Update-JobOutput
+        Update-JobProperties
     })
 
     $ListBox_JobList.Add_SelectionChanged({
