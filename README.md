@@ -1,5 +1,5 @@
 # PSJobMonitor
-GUI app for managing PSJobs
+GUI app for monitoring PSJobs
 
 ## Usage
 
